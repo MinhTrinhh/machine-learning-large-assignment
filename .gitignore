@@ -1,0 +1,40 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Downloaded datasets and extracted raw data
+data/
+aclImdb/
+*.tar.gz
+
+# Downloaded pretrained model weights and local caches
+.cache/
+cache/
+models/
+
+# Generated feature arrays can be large; submit them separately when required
+features/*.npy
+features/*.h5
+features/*.npz
+
+# LaTeX build intermediates (PDF reports remain trackable)
+*.aux
+*.bcf
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.bbl
+*.blg

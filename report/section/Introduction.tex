@@ -1,0 +1,37 @@
+\section{Problem and Dataset}
+
+\subsection{Problem Statement}
+This project proposes binary sentiment classification of movie reviews: given a review, predict whether its sentiment is positive or negative. The experiment compares traditional TF-IDF text features with contextual embeddings from a pretrained DistilBERT model, then evaluates traditional classifiers on each representation. This covers both feature-extraction approaches required by the assignment while keeping the classification stage configurable.
+
+\textbf{Dataset approval status:} The IMDb Large Movie Review Dataset is proposed and must be confirmed with the instructor before the final experiment. Official dataset page: \url{https://ai.stanford.edu/~amaas/data/sentiment/}. Direct archive: \url{https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz}.
+
+\subsection{Dataset Description}
+The labeled dataset contains 50,000 reviews: 25,000 for training and 25,000 for testing, with positive and negative reviews balanced in each split. It also provides 50,000 unlabeled reviews, which are outside the core supervised comparison. The official test split will remain untouched during preprocessing choices and hyperparameter selection.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Property & Planned value \\
+\midrule
+Task & Binary sentiment classification \\
+Dataset & IMDb Large Movie Review Dataset (subject to instructor approval) \\
+Labeled examples & 50,000 reviews; official 25,000 / 25,000 train/test split \\
+Labels & Positive and negative sentiment \\
+Traditional representation & Word and bigram TF-IDF \\
+Modern representation & Contextual DistilBERT embeddings with documented pooling \\
+Source & \url{https://ai.stanford.edu/~amaas/data/sentiment/} \\
+\bottomrule
+\end{tabularx}
+\caption{Proposed dataset and task setup}
+\end{table}
+
+\subsection{Research Questions}
+\begin{enumerate}
+  \item How do TF-IDF and pretrained contextual embeddings compare on the same held-out reviews?
+  \item Which traditional classifier performs best for each representation?
+  \item How do review length, vocabulary, and frequent terms relate to observed classification errors?
+\end{enumerate}
+
+\subsection{Scope}
+The required comparison uses labeled reviews, TF-IDF and pretrained DistilBERT features, and traditional classifiers. Fine-tuning a transformer may be added as bonus extension work if time and compute permit. No performance values are reported until the notebook experiments have been run.

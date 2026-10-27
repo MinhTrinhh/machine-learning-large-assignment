@@ -1,0 +1,61 @@
+\section{Exploratory Data Analysis}
+
+EDA will be completed before feature extraction. The notebook will verify the number of labeled reviews in each split and class; identify empty, duplicate, or malformed reviews; calculate word-count and character-count statistics; plot review-length distributions; and display frequent words and n-grams. Text normalization and stop-word decisions will be documented, since aggressive cleaning can remove useful sentiment signals such as negation.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+EDA item & Result to record from executed notebook \\
+\midrule
+Review count by split and sentiment & \textit{Fill from executed notebook} \\
+Empty, duplicate, or malformed reviews & \textit{Fill from executed notebook} \\
+Word and character count statistics & \textit{Fill from executed notebook} \\
+Review-length distribution & Insert exported histogram \\
+Frequent words / n-grams & Insert exported table or figure \\
+\bottomrule
+\end{tabularx}
+\caption{EDA summary template}
+\end{table}
+
+\section{Preprocessing and Feature Pipeline}
+The Google Colab notebook downloads the public archive directly into the runtime and extracts it there, without mounting a personal cloud drive. It preserves the official train/test folders, decodes review text as UTF-8, and checks labels and class balance. A validation subset is created only from the official training data with a fixed seed. Vocabulary fitting, IDF statistics, and any learned preprocessing are fit on training data only. The test set is kept out of all tuning.
+
+\subsection{Traditional Features: TF-IDF}
+Build configurable word-level TF-IDF features with unigram and bigram options, document-frequency thresholds, and a capped vocabulary size. Fit the vectorizer on training reviews and transform validation/test reviews with the fitted vectorizer. Save the resulting sparse matrix appropriately (for example, compressed sparse NPZ); the assignment specifically requires the modern embedding outputs to be saved as \texttt{.npy} or \texttt{.h5}.
+
+\subsection{Modern Features: DistilBERT Embeddings}
+Use a pretrained \texttt{distilbert-base-uncased} encoder as a frozen feature extractor. Tokenize with an explicitly recorded maximum sequence length and padding/truncation policy, then apply documented masked mean pooling over token representations to produce one vector per review. Extract and save train, validation, and test feature arrays and their labels as \texttt{.npy} under \texttt{features/}. Include model identifier, pooling method, sequence length, split order, label mapping, and preprocessing metadata. Batch inference on a Colab GPU is recommended; cache extracted arrays so classifier experiments do not recompute embeddings.
+
+\subsection{Traditional Classifiers}
+Compare Logistic Regression and linear Support Vector Machine on both TF-IDF and DistilBERT representations. Include Multinomial Naive Bayes as an additional TF-IDF baseline where appropriate. Tune regularization and TF-IDF settings using training/validation data only. Record the parameter grid, random seed, and selected settings for each model.
+
+\section{Experiments and Evaluation}
+Report accuracy, macro-averaged precision, recall, and F1-score, plus a confusion matrix for each final configuration. Include class-wise scores and runtime when feasible. Apply the same split and evaluation procedure across feature approaches. Complete the table with measured results only after the Colab notebook has completed successfully.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{p{2cm} p{2.6cm} X c c c c}
+\toprule
+Features & Classifier & Key settings & Acc. & P & R & F1 \\
+\midrule
+TF-IDF & Logistic Regression & \textit{TBD} & -- & -- & -- & -- \\
+TF-IDF & Linear SVM & \textit{TBD} & -- & -- & -- & -- \\
+TF-IDF & Multinomial Naive Bayes & \textit{TBD} & -- & -- & -- & -- \\
+DistilBERT embeddings & Logistic Regression & \textit{TBD} & -- & -- & -- & -- \\
+DistilBERT embeddings & Linear SVM & \textit{TBD} & -- & -- & -- & -- \\
+\bottomrule
+\end{tabularx}
+\caption{Final held-out test-set comparison (complete after experiments)}
+\end{table}
+Precision (P), recall (R), and F1 are macro-averaged.
+
+\subsection{Analysis of Results}
+After running the comparison, explain measured differences between TF-IDF and contextual features, and among classifiers. Discuss common false positives and false negatives, the influence of review length and vocabulary, runtime and memory costs, and limitations such as the binary polar labels and domain-specific language. Distinguish results supported by the experiment from hypotheses. Do not claim one approach is superior until the comparison is complete.
+
+\section{Reproducibility and Deliverables}
+The assignment is implemented through a Google Colab notebook with supporting Python modules. The notebook installs dependencies, downloads and extracts the dataset from a public URL, runs end to end with \textit{Runtime $\rightarrow$ Run all}, and avoids personal cloud-drive mounts. The submission package is organized into \texttt{notebooks/}, \texttt{modules/}, \texttt{reports/}, and \texttt{features/}. Contextual embedding arrays and labels are saved in \texttt{.npy} or \texttt{.h5} format and included in the submission or linked for download. Add the PDF report and Colab link to the README and notebook before submission.
+
+\section{Limitations and Future Work}
+TF-IDF ignores much word order and context, while DistilBERT embeddings require more compute and depend on the pretrained model and pooling choice. Maximum sequence length may truncate long reviews. The dataset contains only strongly positive and negative labeled reviews in the supplied split, so results may not generalize to neutral sentiment or other domains. Fine-tuning a transformer is a possible extension if resources permit.
