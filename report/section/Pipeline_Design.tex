@@ -1,0 +1,217 @@
+\section{Pipeline Design}
+\label{sec:pipeline}
+
+The implementation follows a leakage-safe sequence from raw CSV files to final held-out evaluation. Dataset integrity is checked first, training-only cleaning is applied next, and all learned transformations are fitted without access to the official test labels. The same cleaned examples, split policy, classifiers, and evaluation metrics are used for both feature representations.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=8mm and 18mm,
+  pipeline/.style={
+    draw,
+    rounded corners,
+    align=center,
+    text width=4.2cm,
+    minimum height=9mm,
+    inner sep=4pt
+  },
+  data/.style={pipeline, fill=gray!12},
+  feature/.style={pipeline, fill=green!10},
+  model/.style={pipeline, fill=orange!12},
+  evaluation/.style={pipeline, fill=red!8},
+  arrow/.style={-{Latex[length=2mm]}, thick}
+]
+  \node[data] (raw) {Raw data};
+  \node[data, below=of raw] (clean) {Data preprocessing};
+  \node[data, below=of clean] (split) {Train/validation split};
+
+  \node[feature, below left=of split] (tfidf) {TF-IDF feature extractor};
+  \node[feature, below right=of split] (glove) {GloVe feature extractor};
+
+  \node[model] (selection) at
+    ($(tfidf.south)!0.5!(glove.south)+(0,-14mm)$)
+    {Model selection};
+  \node[model, below=of selection] (refit) {Model refitting};
+  \node[evaluation, below=of refit] (evaluate) {Evaluation};
+  \node[evaluation, below=of evaluate] (metrics) {Metrics};
+
+  \draw[arrow] (raw) -- (clean);
+  \draw[arrow] (clean) -- (split);
+  \draw[arrow] (split) -- (tfidf);
+  \draw[arrow] (split) -- (glove);
+  \draw[arrow] (tfidf) -- (selection);
+  \draw[arrow] (glove) -- (selection);
+  \draw[arrow] (selection) -- (refit);
+  \draw[arrow] (refit) -- (evaluate);
+  \draw[arrow] (evaluate) -- (metrics);
+\end{tikzpicture}
+  }
+\caption{Leakage-safe pipeline from data preparation to held-out evaluation.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Leakage-Safe Data Preparation}
+
+After removing one train/test text overlap and 15 repeated training rows beyond the first occurrence, the clean training corpus contained 41,141 rows. A stratified 80/20 split produced 32,912 development rows and 8,229 validation rows. The official 3,798-row test file remained untouched during preprocessing and parameter selection. Hyperparameters were selected by three-fold stratified cross-validation within the development subset. After validation-based model selection, each selected configuration was refitted on all 41,141 clean training rows and evaluated once on the official test set.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.4cm}|>{\raggedright\arraybackslash}p{3.2cm}|X|X|}
+\hline
+\textbf{Stage} & \textbf{Data} & \textbf{Operation} & \textbf{Leakage protection / output} \\
+\hline
+Data audit & Raw train and test & Check schema, missing values, duplicates, and normalized-text overlap. & Test labels are not used; one overlapping training row is removed. \\
+\hline
+Deduplication & Training data & Remove repeated normalized training text after the first occurrence. & Prevents repeated examples from appearing across train and validation; 41,141 rows remain. \\
+\hline
+Data split & Clean training data & Create a stratified 80/20 train--validation split. & The train set has 32,912 rows and validation has 8,229 rows. \\
+\hline
+Feature fitting & train data & Fit TF-IDF vocabulary or use pretrained GloVe; transform validation and test data. & Learned TF-IDF statistics are not fitted on validation or test data. \\
+\hline
+Model selection & Development data & Run three-fold cross-validation and confirm the selected configuration on validation data. & The official test set is excluded from all tuning decisions. \\
+\hline
+Final evaluation & All clean training data and official test data & Refit the selected pipeline on 41,141 training rows and evaluate once on 3,798 test rows. & Test metrics are reported only after model selection is complete. \\
+\hline
+\end{tabularx}
+\caption{Leakage-safe data preparation and evaluation protocol.}
+\label{tab:leakage-protocol}
+\end{table}
+
+\subsection{Text Normalization}
+
+The preprocessing policy is deliberately conservative. Table~\ref{tab:text-normalization} summarizes the transformations applied to each tweet. The words inside hashtags are retained. Stop words and negations are not removed because words such as \textit{not} and \textit{no} are important sentiment signals. No learned preprocessing component is fitted before the split.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{4.8cm}|X|}
+\hline
+\textbf{Input form} & \textbf{Transformation} & \textbf{Result / example} \\
+\hline
+Missing value & Replace with an empty string & Empty text \\
+\hline
+Uppercase letters & Convert to lowercase & \texttt{COVID} $\rightarrow$ \texttt{covid} \\
+\hline
+HTML entities & Decode HTML & \texttt{\&amp;} $\rightarrow$ \texttt{\&} \\
+\hline
+Curly or legacy apostrophes & Convert to a standard apostrophe & \texttt{can’t} $\rightarrow$ \texttt{can't} \\
+\hline
+Accented characters & Apply Unicode accent normalization & \texttt{na\"ive} $\rightarrow$ \texttt{naive} \\
+\hline
+URLs & Replace with a URL token & \url{https://example.com} $\rightarrow$ \texttt{\textless url\textgreater} \\
+\hline
+User mentions & Replace with a user token & \texttt{@username} $\rightarrow$ \texttt{\textless user\textgreater} \\
+\hline
+Hashtags & Remove only the \texttt{\#}; retain the word & \texttt{\#StaySafe} $\rightarrow$ \texttt{staysafe} \\
+\hline
+Leading, trailing, or repeated whitespace & Trim and collapse whitespace & \texttt{\ \ hello\ \ world\ \ } $\rightarrow$ \texttt{hello world} \\
+\hline
+Stop words and negations & No removal & \texttt{not} and \texttt{no} are retained \\
+\hline
+\end{tabularx}
+\caption{Text normalization applied before feature extraction.}
+\label{tab:text-normalization}
+\end{table}
+
+\subsection{Traditional TF-IDF Representation}
+
+The traditional representation uses word-level TF-IDF with sublinear term frequency and 
+Unicode accent normalization. Terms must occur in at least two documents and no more than 95\% 
+of documents. The vocabulary is capped at 50,000 features and stored as a 32-bit sparse matrix. 
+Unigrams and unigram-plus-bigram representations are configurable alternatives. The 
+validation-selected linear-SVM representation used unigrams and contained 21,409 features. 
+The final sparse matrices have shapes $41{,}141 \times 21{,}409$ for training 
+and $3{,}798 \times 21{,}409$ for testing.
+
+Conceptually, the final training representation is the document--term matrix
+\[
+\mathbf{X}_{\mathrm{train}}=
+\left[
+\begin{array}{c|ccccc}
+ & \text{token}_{1} & \text{token}_{2} & \text{token}_{3} & \cdots
+ & \text{token}_{21409} \\
+\hline
+\text{tweet}_{1}      & x_{1,1}      & x_{1,2}      & x_{1,3}      & \cdots & x_{1,21409} \\
+\text{tweet}_{2}      & x_{2,1}      & x_{2,2}      & x_{2,3}      & \cdots & x_{2,21409} \\
+\text{tweet}_{3}      & x_{3,1}      & x_{3,2}      & x_{3,3}      & \cdots & x_{3,21409} \\
+\vdots                & \vdots       & \vdots       & \vdots       & \ddots & \vdots \\
+\text{tweet}_{41141} & x_{41141,1} & x_{41141,2} & x_{41141,3}
+                       & \cdots & x_{41141,21409}
+\end{array}
+\right].
+\]
+Here, each row represents one training tweet, each column represents one unique
+token retained in the fitted vocabulary, and $x_{i,j}$ is the TF-IDF weight of
+token $j$ in tweet $i$. Thus, $x_{i,j}=0$ when the token is absent; when it is
+present, the value reflects its within-tweet frequency and inverse document
+frequency rather than only a binary occurrence. The test matrix has 3,798 rows
+and uses exactly the same 21,409 vocabulary columns learned from the training
+corpus.
+
+\subsection{Modern GloVe-Twitter-100 Representation}
+
+The modern representation uses the pretrained \texttt{glove-twitter-100} model distributed 
+through Gensim. Each tweet is represented by the unweighted mean of its in-vocabulary 
+100-dimensional word vectors. The resulting dense arrays have shapes $41{,}141 \times 100$ and $3{,}798 \times 100$ and are saved as 32-bit \texttt{.npy} files.
+
+Let $K_i$ be the set of tokens in tweet $i$ that occur in the pretrained GloVe
+vocabulary, and let $\mathbf{e}(t)\in\mathbf{R}^{100}$ be the pretrained vector
+for token $t$. Mean pooling produces one tweet-level feature vector
+\[
+\mathbf{g}_i=\frac{1}{|K_i|}\sum_{t\in K_i}\mathbf{e}(t)
+             =\begin{bmatrix}g_{i,1}&g_{i,2}&\cdots&g_{i,100}\end{bmatrix}.
+\]
+Stacking these vectors gives the final training feature matrix
+\[
+\mathbf{G}_{\mathrm{train}}=
+\left[
+\begin{array}{c|ccccc}
+ & \text{dim.}_{1} & \text{dim.}_{2} & \text{dim.}_{3}
+ & \cdots & \text{dim.}_{100} \\
+\hline
+\text{tweet}_{1}      & g_{1,1}      & g_{1,2}      & g_{1,3}      & \cdots & g_{1,100} \\
+\text{tweet}_{2}      & g_{2,1}      & g_{2,2}      & g_{2,3}      & \cdots & g_{2,100} \\
+\text{tweet}_{3}      & g_{3,1}      & g_{3,2}      & g_{3,3}      & \cdots & g_{3,100} \\
+\vdots                & \vdots       & \vdots       & \vdots       & \ddots & \vdots \\
+\text{tweet}_{41141} & g_{41141,1} & g_{41141,2} & g_{41141,3}
+                         & \cdots & g_{41141,100}
+\end{array}
+\right]
+\in\mathbf{R}^{41{,}141\times100}.
+\]
+Unlike the TF-IDF matrix, a GloVe column does not correspond to a particular
+token. Each column is one learned embedding dimension, and all 100 dimensions
+together encode the averaged semantic representation of a tweet. The test
+matrix is constructed identically and belongs to
+$\mathbf{R}^{3{,}798\times100}$.
+
+\subsection{Modeling and Evaluation}
+
+Both representations are evaluated with Logistic Regression and a linear SVM. 
+Before classification, each of the 100 dense GloVe dimensions is standardized
+to zero mean and unit variance:
+\[
+z_{i,j}=\frac{g_{i,j}-\mu_j}{\sigma_j},
+\]
+where $g_{i,j}$ is dimension $j$ of tweet $i$, and $\mu_j$ and $\sigma_j$ are
+the mean and standard deviation of that dimension calculated from the data used
+to fit the model. The standardizer is contained inside the model pipeline, so
+during cross-validation it is fitted only on the current training fold; for
+final evaluation, it is fitted on the complete cleaned training set. Validation
+and test vectors are transformed using these learned training statistics, which
+prevents information leakage. The sparse TF-IDF features receive no additional
+standardization: the TF-IDF vectorizer already applies row-wise $L_2$
+normalization, and mean-centering would destroy the matrix's sparse structure.
+Accuracy, macro precision, macro recall, macro-F1, and weighted F1 are reported. 
+Macro-F1 is the primary selection measure because the EDA in Section~\ref{sec:eda} showed unequal class frequencies.
+
+% \subsection{Configuration and Component Coordination}
+
+% The notebook exposes tuples that select either or both feature extractors and either or both classifiers. Each extractor supplies its own pipeline steps and parameter grid, while each classifier supplies its $C$ and class-weight grid through a shared \texttt{fit}/\texttt{predict} interface. The trainer combines these components into a scikit-learn pipeline, performs the search, and refits the winning configuration. The evaluator never fits a model: it predicts, computes metrics, and selects the validation winner. This separation allows a representation or classifier to be replaced without rewriting the orchestration logic.
+
+% Tokenization is representation-specific: TF-IDF uses its word token pattern, while GloVe uses a token pattern compatible with the pretrained Twitter vocabulary. Sequence padding is not required because TF-IDF produces fixed-width sparse vectors and mean pooling produces one fixed 100-dimensional GloVe vector per tweet. Stop-word removal is intentionally disabled for modeling so that negators and other sentiment-bearing function words are retained.

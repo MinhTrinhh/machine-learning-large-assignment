@@ -1,0 +1,5 @@
+\section{Conclusion}
+
+This project implements the complete traditional machine-learning workflow required for text data: EDA, leakage-safe preprocessing, configurable feature extraction, model training, validation, and held-out evaluation. It also compares traditional TF-IDF features with modern pretrained GloVe-Twitter-100 embeddings using the same Logistic Regression and linear-SVM classifiers.
+
+TF-IDF linear SVM achieved the best macro-F1 (0.5812), while TF-IDF Logistic Regression achieved the best accuracy (56.87\%). Mean-pooled GloVe was markedly weaker, with a best macro-F1 of 0.4275. The controlled comparison shows that pretrained semantic vectors are not automatically superior: representation aggregation and task-specific lexical weighting materially affect sentiment-classification performance.

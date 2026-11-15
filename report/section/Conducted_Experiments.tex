@@ -1,0 +1,80 @@
+\section{Conducted Experiments}
+\label{sec:experiments}
+
+The experiments compare two feature families and two linear classifiers under the same data protocol. Parameter selection uses three-fold stratified cross-validation on the development subset, followed by confirmation on the separate validation subset. The official test set is excluded from every selection decision.
+
+\subsection{Test Configurations}
+
+For TF-IDF, the experiment compares word unigrams with word unigrams plus bigrams. 
+Logistic Regression tests $C \in \{0.5,1.0\}$, and linear SVM tests $C \in \{0.5,1.0,2.0\}$. 
+For GloVe, Logistic Regression tests $C \in \{0.5,1.0,2.0\}$, and linear SVM uses the same 
+three values. All configurations use the same random seed and the same cleaned train/validation partition.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|l|X|r|}
+\hline
+Features & Model & Implemented configuration grid & Candidates \\
+\hline
+TF-IDF & Logistic Regression & $n$-grams $\in\{(1,1),(1,2)\}$; $C\in\{0.5,1.0\}$; class weight $\in\{\texttt{None},\texttt{balanced}\}$ & 8 \\
+\hline
+TF-IDF & Linear SVM & $n$-grams $\in\{(1,1),(1,2)\}$; $C\in\{0.5,1.0,2.0\}$; class weight $\in\{\texttt{None},\texttt{balanced}\}$ & 12 \\
+\hline
+GloVe & Logistic Regression & Fixed 100-d mean pooling and standardization; $C\in\{0.5,1.0,2.0\}$; class weight $\in\{\texttt{None},\texttt{balanced}\}$ & 6 \\
+\hline
+GloVe & Linear SVM & Fixed 100-d mean pooling and standardization; $C\in\{0.5,1.0,2.0\}$; class weight $\in\{\texttt{None},\texttt{balanced}\}$ & 6 \\
+\hline
+\end{tabularx}
+\caption{Each candidate is one element of the Cartesian product of the tested entries in its row}
+\label{tab:tested-configurations}
+\end{table}
+
+The Cartesian search therefore evaluates 8 TF-IDF Logistic Regression candidates, 12 TF-IDF linear-SVM candidates, and 6 candidates for each GloVe classifier. With three folds, these correspond to 24, 36, 18, and 18 cross-validation fits, respectively, before scikit-learn refits the best candidate on the complete development subset.
+
+\subsection{Cross-Validation Selection}
+
+Table~\ref{tab:selected-settings} lists the configuration selected for each feature-model pair. None of the four selected configurations used balanced class weighting. The selected TF-IDF configurations used unigrams, indicating that adding bigrams did not improve development cross-validation macro-F1 enough to be selected.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|X|r|}
+\hline
+Features & Model & Selected settings & CV macro-F1 \\
+\hline
+TF-IDF & Logistic Regression & unigrams, $C=1.0$, no weighting & 0.5509 \\
+\hline
+TF-IDF & Linear SVM & unigrams, $C=0.5$, no weighting & 0.5546 \\
+\hline
+GloVe & Logistic Regression & $C=0.5$, no weighting & 0.4406 \\
+\hline
+GloVe & Linear SVM & $C=0.5$, no weighting & 0.4336 \\
+\hline
+\end{tabularx}
+\caption{Selected representation and model configurations.}
+\label{tab:selected-settings}
+\end{table}
+
+\subsection{Validation Results}
+
+TF-IDF was clearly stronger than mean-pooled GloVe on the validation subset. TF-IDF linear SVM produced the highest validation macro-F1 (0.5842), narrowly ahead of TF-IDF Logistic Regression (0.5825). GloVe Logistic Regression was the best embedding configuration at 0.4441 macro-F1.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|r|r|}
+\hline
+Model & Accuracy & Macro-F1 \\
+\hline
+TF-IDF + Linear SVM & 0.5726 & 0.5842 \\
+\hline
+TF-IDF + Logistic Regression & 0.5766 & 0.5825 \\
+\hline
+GloVe + Logistic Regression & 0.4372 & 0.4441 \\
+\hline
+GloVe + Linear SVM & 0.4298 & 0.4360 \\
+\hline
+\end{tabular}
+\caption{Validation-set performance of the selected configurations.}
+\label{tab:validation-results}
+\end{table}

@@ -6,6 +6,10 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
+# OS and temporary files
+.DS_Store
+tmp/
+
 # Notebook checkpoints
 .ipynb_checkpoints/
 
@@ -18,13 +22,14 @@ aclImdb/
 .cache/
 cache/
 models/
+outputs/models/
 
 # Generated feature arrays can be large; submit them separately when required
 features/*.npy
 features/*.h5
 features/*.npz
 
-# LaTeX build intermediates (PDF reports remain trackable)
+# LaTeX build intermediates (only reports/Final_Report.pdf is kept)
 *.aux
 *.bcf
 *.fdb_latexmk
@@ -38,3 +43,4 @@ features/*.npz
 *.toc
 *.bbl
 *.blg
+report/report.pdf

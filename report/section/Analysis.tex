@@ -1,0 +1,43 @@
+\section{Analysis}
+\label{sec:analysis}
+
+\subsection{Why TF-IDF Outperformed Mean-Pooled GloVe}
+
+The strongest TF-IDF model exceeded the strongest GloVe model by 0.1537 macro-F1 on the 
+official test set. TF-IDF preserves corpus-specific lexical importance: rare words and short 
+phrases associated with sentiment receive strong weights, while common terms are discounted. 
+In contrast, unweighted GloVe mean pooling compresses an entire tweet into 100 values, removes 
+word order, and gives every recognized token equal influence.
+
+The classifier comparison is much smaller than the representation comparison. 
+Within TF-IDF, linear SVM exceeded Logistic Regression by only 0.0085 macro-F1. 
+Within GloVe, Logistic Regression exceeded linear SVM by only 0.0017. This indicates 
+that feature representation was the main source of performance difference in these experiments.
+
+\subsection{Error Analysis}
+
+The largest TF-IDF errors occur between adjacent intensity levels. 
+Of 592 Extremely Negative tweets, 197 were predicted as Negative; of 599 Extremely 
+Positive tweets, 181 were predicted as Positive. The model also predicted 214 of 1,041 Negative 
+tweets as Positive. These errors are consistent with ambiguity in intensity, negation, quotation, 
+sarcasm, and mixed opinions.
+
+GloVe did not resolve these issues: its Logistic Regression model mapped 286 Extremely 
+Negative tweets to Negative and 287 Extremely Positive tweets to Positive. Averaging pretrained 
+word vectors removes compositional information that could distinguish ordinary from extreme 
+sentiment. TF-IDF cannot fully model such context either, but it retains highly discriminative 
+surface terms that mean pooling dilutes.
+
+\subsection{Advantages and Limitations}
+
+TF-IDF is sparse, task-specific, interpretable, and comparatively strong for this dataset, 
+but it does not represent semantic similarity well and cannot preserve full word order. 
+Pretrained GloVe provides dense semantic features and compact 100-dimensional arrays, 
+but its static vectors assign the same representation to a word in every context, 
+and averaging discards token order and intensity structure.
+
+The dataset also imposes limitations. Labels separating ordinary from extreme sentiment 
+may be subjective, and the tweets represent a specific pandemic period and topic. 
+Results may not generalize to later language or other domains. Only a compact parameter grid 
+was tested, so the results compare the implemented configurations rather than every possible 
+classifier or embedding strategy.

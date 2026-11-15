@@ -1,37 +1,72 @@
-\section{Problem and Dataset}
+\section{Introduction}
 
 \subsection{Problem Statement}
-This project proposes binary sentiment classification of movie reviews: given a review, predict whether its sentiment is positive or negative. The experiment compares traditional TF-IDF text features with contextual embeddings from a pretrained DistilBERT model, then evaluates traditional classifiers on each representation. This covers both feature-extraction approaches required by the assignment while keeping the classification stage configurable.
+This project addresses the five-class sentiment classification of English-language tweets 
+posted during the COVID-19 pandemic, requiring models to predict one of five ordered sentiment 
+labels: \textit{Extremely Negative, Negative, Neutral, Positive, or Extremely Positive}. 
 
-\textbf{Dataset approval status:} The IMDb Large Movie Review Dataset is proposed and must be confirmed with the instructor before the final experiment. Official dataset page: \url{https://ai.stanford.edu/~amaas/data/sentiment/}. Direct archive: \url{https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz}.
+The methodology encompasses exploratory data analysis (EDA), leakage-safe data preparation, 
+feature engineering, model selection, and held-out evaluation using Logistic Regression and 
+linear Support Vector Machines (SVMs). 
 
-\subsection{Dataset Description}
-The labeled dataset contains 50,000 reviews: 25,000 for training and 25,000 for testing, with positive and negative reviews balanced in each split. It also provides 50,000 unlabeled reviews, which are outside the core supervised comparison. The official test split will remain untouched during preprocessing choices and hyperparameter selection.
+To isolate and compare the impact of text representations, the workflow evaluates both traditional 
+word-level TF-IDF features and modern pretrained GloVe-Twitter-100 embeddings utilized as a fixed 
+feature extractor. Both representations are evaluated under identical classifiers, data 
+partitions, selection metrics, and official test sets to ensure performance differences stem 
+directly from the feature representation rather than experimental variance. 
+
+Furthermore, the modern approach is strictly constrained to a fixed embedding feature extractor 
+and does not encompass an end-to-end neural network training pipeline or 
+separate deep-learning pipeline extensions.
+
+\subsection{Dataset}
+The selected \textit{Coronavirus Tweets NLP -- Text Classification} dataset contains an 
+official training file with 41,157 rows and an official test file with 3,798 rows. 
+Each row contains anonymized identifiers, a user-provided location, posting date, tweet text, 
+and a manually assigned sentiment label.
 
 \begin{table}[H]
 \centering
-\begin{tabularx}{\textwidth}{lX}
-\toprule
-Property & Planned value \\
-\midrule
-Task & Binary sentiment classification \\
-Dataset & IMDb Large Movie Review Dataset (subject to instructor approval) \\
-Labeled examples & 50,000 reviews; official 25,000 / 25,000 train/test split \\
-Labels & Positive and negative sentiment \\
-Traditional representation & Word and bigram TF-IDF \\
-Modern representation & Contextual DistilBERT embeddings with documented pooling \\
-Source & \url{https://ai.stanford.edu/~amaas/data/sentiment/} \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Property & Value \\
+\hline
+Task & Five-class single-label sentiment classification \\
+\hline
+Training rows & 41,157 before leakage and duplicate controls \\
+\hline
+Official test rows & 3,798 \\
+\hline
+Input feature & \texttt{OriginalTweet} \\
+\hline
+Target & \texttt{Sentiment} \\
+\hline
+Traditional representation & Word-level TF-IDF \\
+\hline
+Modern representation & Mean-pooled pretrained GloVe-Twitter-100 \\
+\hline
+Classifiers & Logistic Regression and linear SVM \\
+\hline
+Primary selection metric & Macro-averaged F1-score \\
+\hline
+Random seed & 42 \\
+\hline
 \end{tabularx}
-\caption{Proposed dataset and task setup}
+\caption{Dataset and controlled feature-comparison experiment}
 \end{table}
 
 \subsection{Research Questions}
 \begin{enumerate}
-  \item How do TF-IDF and pretrained contextual embeddings compare on the same held-out reviews?
-  \item Which traditional classifier performs best for each representation?
-  \item How do review length, vocabulary, and frequent terms relate to observed classification errors?
+  \item What class balance, text-length patterns, and structural characteristics are present in the training tweets?
+  \item How do Logistic Regression and linear SVM perform with TF-IDF and GloVe-Twitter-100 features?
+  \item Which representation better separates adjacent sentiment intensities, and what do the errors reveal about each representation?
 \end{enumerate}
 
 \subsection{Scope}
-The required comparison uses labeled reviews, TF-IDF and pretrained DistilBERT features, and traditional classifiers. Fine-tuning a transformer may be added as bonus extension work if time and compute permit. No performance values are reported until the notebook experiments have been run.
+\begin{itemize}
+  \item \textbf{Exploratory Data Analysis (EDA) and Preprocessing:} Dataset inspection followed by controlled, leakage-safe text normalization.
+  \item \textbf{Feature Extraction:} Sparse word-level TF-IDF vectorization alongside pretrained GloVe-Twitter-100 embedding retrieval and pooling.
+  \item \textbf{Artifact Serialization:} Export of dense GloVe feature matrices and target labels as \texttt{.npy} files.
+  \item \textbf{Model Selection and Validation:} Three-fold cross-validation for hyperparameter tuning, verified against a separate validation holdout set.
+  \item \textbf{Final Refitting and Evaluation:} Final model training and held-out evaluation on the official test set.
+\end{itemize}

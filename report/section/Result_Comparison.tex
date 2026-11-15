@@ -1,0 +1,113 @@
+\section{Result Comparison}
+\label{sec:results}
+
+After configuration selection, every chosen model was refitted on the complete clean 
+training corpus and evaluated on the untouched official test set. 
+Table~\ref{tab:test-results} and Figure~\ref{fig:model-comparison} provide the direct 
+traditional-versus-modern comparison.
+
+\subsection{Overall Test Performance}
+
+The TF-IDF linear SVM achieved the highest test macro-F1, 0.5812. 
+TF-IDF Logistic Regression had slightly higher accuracy (0.5687) but lower 
+macro-F1 (0.5727). Both GloVe classifiers were substantially weaker: Logistic 
+Regression reached 0.4223 accuracy and 0.4275 macro-F1, while linear SVM reached 0.4176 
+accuracy and 0.4258 macro-F1. Validation and test rankings were consistent.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{|l|r|r|r|r|r|}
+\hline
+Model & Accuracy & Macro P & Macro R & Macro-F1 & Weighted F1 \\
+\hline
+TF-IDF + Linear SVM & 0.5674 & 0.5808 & 0.5830 & \textbf{0.5812} & 0.5666 \\
+\hline
+TF-IDF + Logistic Regression & \textbf{0.5687} & 0.6001 & 0.5624 & 0.5727 & 0.5679 \\
+\hline
+GloVe + Logistic Regression & 0.4223 & 0.4701 & 0.4122 & 0.4275 & 0.4239 \\
+\hline
+GloVe + Linear SVM & 0.4176 & 0.4442 & 0.4183 & 0.4258 & 0.4188 \\
+\hline
+\end{tabular}
+\caption{Official held-out test-set performance. Best accuracy and macro-F1 are emphasized.}
+\label{tab:test-results}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{../outputs/graphics/comparison/feature_model_comparison.png}
+\caption{Controlled TF-IDF and GloVe comparison on the official test set.}
+\label{fig:model-comparison}
+\end{figure}
+
+\subsection{Class-Level Performance of the Best Model}
+
+The selected TF-IDF linear SVM performed best on Neutral tweets (F1 0.6703) and Extremely Positive tweets (F1 0.6254). Its lowest class F1 was 0.5063 for Negative tweets. The gap among classes confirms why the macro average is more informative than accuracy alone.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|r|r|r|r|}
+\hline
+Class & Precision & Recall & F1 & Support \\
+\hline
+Extremely Negative & 0.6115 & 0.5743 & 0.5923 & 592 \\
+\hline
+Negative & 0.5305 & 0.4842 & 0.5063 & 1,041 \\
+\hline
+Neutral & 0.6420 & 0.7011 & 0.6703 & 619 \\
+\hline
+Positive & 0.4936 & 0.5312 & 0.5117 & 947 \\
+\hline
+Extremely Positive & 0.6265 & 0.6244 & 0.6254 & 599 \\
+\hline
+\end{tabular}
+\caption{TF-IDF linear-SVM performance by test class.}
+\label{tab:class-results}
+\end{table}
+
+\clearpage
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{../outputs/graphics/tfidf/logistic_regression_test_confusion_matrix.png}
+\hfill
+\includegraphics[width=0.45\textwidth]{../outputs/graphics/tfidf/linear_svm_test_confusion_matrix.png}
+\caption{TF-IDF test-set confusion matrices for Logistic Regression (left) and linear SVM (right).}
+\label{fig:tfidf-confusion}
+\end{figure}
+
+\subsection{GloVe Selected Model on the Test Set}
+
+The validation-selected GloVe Logistic Regression pipeline was refitted on all 41,141 clean training rows and then evaluated on all 3,798 official test rows. It achieved 0.4223 accuracy and 0.4275 macro-F1. Its strongest class was Neutral (F1 0.4778), while Positive had the lowest F1 (0.4070). Table~\ref{tab:glove-class-results} and Figure~\ref{fig:glove-confusion} provide the class-level test evidence that was previously missing from the report.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|r|r|r|r|}
+\hline
+Class & Precision & Recall & F1 & Support \\
+\hline
+Extremely Negative & 0.5168 & 0.3378 & 0.4086 & 592 \\
+\hline
+Negative & 0.3948 & 0.4256 & 0.4096 & 1,041 \\
+\hline
+Neutral & 0.5063 & 0.4523 & 0.4778 & 619 \\
+\hline
+Positive & 0.3425 & 0.5016 & 0.4070 & 947 \\
+\hline
+Extremely Positive & 0.5903 & 0.3439 & 0.4346 & 599 \\
+\hline
+\end{tabular}
+\caption{GloVe Logistic Regression performance by test class.}
+\label{tab:glove-class-results}
+\end{table}
+
+\clearpage
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{../outputs/graphics/glove/logistic_regression_test_confusion_matrix.png}
+\hfill
+\includegraphics[width=0.45\textwidth]{../outputs/graphics/glove/linear_svm_test_confusion_matrix.png}
+\caption{GloVe test-set confusion matrices for Logistic Regression (left) and linear SVM (right).}
+\label{fig:glove-confusion}
+\end{figure}
