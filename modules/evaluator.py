@@ -59,15 +59,24 @@ def _save_test_metrics(
 def validate_models(
     tuning: TuningResult,
     validation: pd.DataFrame,
+    validation_features: Any | None = None,
 ) -> ValidationResult:
     labels = validation[TARGET_COLUMN]
     metrics: list[dict[str, Any]] = []
     predictions: dict[str, Any] = {}
+    if tuning.uses_precomputed_features:
+        if validation_features is None:
+            raise ValueError("Validation requires reloaded precomputed features")
+        if len(validation_features) != len(validation):
+            raise ValueError("Precomputed validation features are not row-aligned")
+        validation_input = validation_features
+    else:
+        if validation_features is not None:
+            raise ValueError("Unexpected precomputed validation features")
+        validation_input = validation[PROCESSED_TEXT_COLUMN]
 
     for model_name, search in tuning.searches.items():
-        prediction = search.best_estimator_.predict(
-            validation[PROCESSED_TEXT_COLUMN]
-        )
+        prediction = search.best_estimator_.predict(validation_input)
         predictions[model_name] = prediction
         metrics.append(
             {"model": model_name, **_metrics(labels, prediction)}
@@ -89,14 +98,25 @@ def evaluate_models(
     test: pd.DataFrame,
     validation: ValidationResult,
     project_root: Path | str = Path("."),
+    test_features: Any | None = None,
 ) -> dict[str, Any]:
     root = Path(project_root).resolve()
     test_labels = test[TARGET_COLUMN]
     test_metrics: list[dict[str, Any]] = []
     test_predictions: dict[str, Any] = {}
+    if training.uses_precomputed_features:
+        if test_features is None:
+            raise ValueError("Evaluation requires reloaded precomputed features")
+        if len(test_features) != len(test):
+            raise ValueError("Precomputed test features are not row-aligned")
+        test_input = test_features
+    else:
+        if test_features is not None:
+            raise ValueError("Unexpected precomputed test features")
+        test_input = test[PROCESSED_TEXT_COLUMN]
 
     for model_name, pipeline in training.pipelines.items():
-        test_prediction = pipeline.predict(test[PROCESSED_TEXT_COLUMN])
+        test_prediction = pipeline.predict(test_input)
         test_predictions[model_name] = test_prediction
         test_metrics.append(
             {

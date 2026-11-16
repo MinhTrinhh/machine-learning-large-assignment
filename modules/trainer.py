@@ -49,12 +49,108 @@ class TuningResult:
     searches: dict[str, GridSearchCV]
     selected_parameters: dict[str, dict[str, Any]]
     tuning_seconds: dict[str, float]
+    uses_precomputed_features: bool
 
 
 @dataclass
 class FinalTrainingResult:
     pipelines: dict[str, Pipeline]
     fit_seconds: dict[str, float]
+    uses_precomputed_features: bool
+
+
+def save_precomputed_feature_representations(
+    feature_extractor: FeatureExtractor,
+    train: pd.DataFrame,
+    validation: pd.DataFrame,
+    full_train: pd.DataFrame,
+    test: pd.DataFrame,
+    project_root: Path | str = Path("."),
+) -> dict[str, Any]:
+    if feature_extractor.name != "glove":
+        raise ValueError(
+            "Precomputed .npy classifier inputs are currently supported for GloVe only"
+        )
+
+    fitted_extractor = clone(feature_extractor).fit(
+        full_train[PROCESSED_TEXT_COLUMN]
+    )
+    frames = {
+        "development": train,
+        "validation": validation,
+        "train": full_train,
+        "test": test,
+    }
+    features = {
+        split: fitted_extractor.transform(frame[PROCESSED_TEXT_COLUMN])
+        for split, frame in frames.items()
+    }
+
+    destination = Path(project_root).resolve() / "features"
+    destination.mkdir(parents=True, exist_ok=True)
+    feature_files: dict[str, str] = {}
+    for split, matrix in features.items():
+        filename = f"{fitted_extractor.file_stem}_{split}.npy"
+        np.save(destination / filename, matrix)
+        feature_files[split] = filename
+
+    label_files = {
+        "development": f"{fitted_extractor.file_stem}_development_labels.npy",
+        "validation": f"{fitted_extractor.file_stem}_validation_labels.npy",
+        "train": "train_labels.npy",
+        "test": "test_labels.npy",
+    }
+    for split, filename in label_files.items():
+        np.save(
+            destination / filename,
+            frames[split][TARGET_COLUMN].to_numpy(dtype=str),
+        )
+
+    metadata = {
+        "feature_method": fitted_extractor.label,
+        "saved_before_model_training": True,
+        "classifier_input": "feature matrices reloaded from saved .npy files",
+        "feature_files": feature_files,
+        "label_files_by_split": label_files,
+        "development_shape": list(features["development"].shape),
+        "validation_shape": list(features["validation"].shape),
+        "train_shape": list(features["train"].shape),
+        "test_shape": list(features["test"].shape),
+        "train_rows": len(full_train),
+        "test_rows": len(test),
+        "train_order": "prepared training partition followed by validation partition",
+        "test_order": "official test-file order after preprocessing",
+        "classes": sorted(full_train[TARGET_COLUMN].unique().tolist()),
+    }
+    metadata_path = destination / f"{fitted_extractor.file_stem}_metadata.json"
+    with metadata_path.open("w", encoding="utf-8") as stream:
+        json.dump(metadata, stream, indent=2)
+    return metadata
+
+
+def load_precomputed_feature_representations(
+    feature_extractor: FeatureExtractor,
+    project_root: Path | str = Path("."),
+) -> dict[str, np.ndarray]:
+    """Reload the saved arrays that classifiers must consume."""
+    destination = Path(project_root).resolve() / "features"
+    metadata_path = destination / f"{feature_extractor.file_stem}_metadata.json"
+    with metadata_path.open(encoding="utf-8") as stream:
+        metadata = json.load(stream)
+
+    if not metadata.get("saved_before_model_training"):
+        raise ValueError("Feature metadata does not confirm pre-training serialization")
+    feature_files = metadata.get("feature_files", {})
+    expected_splits = {"development", "validation", "train", "test"}
+    if set(feature_files) != expected_splits:
+        raise ValueError(
+            f"Expected saved feature splits {sorted(expected_splits)}; "
+            f"found {sorted(feature_files)}"
+        )
+    return {
+        split: np.load(destination / filename, allow_pickle=False)
+        for split, filename in feature_files.items()
+    }
 
 
 def save_feature_representations(
@@ -109,19 +205,31 @@ def _build_search(
     feature_extractor: FeatureExtractor,
     model: ClassificationModel,
     cache_directory: Path,
+    use_precomputed_features: bool = False,
 ) -> GridSearchCV:
     memory = (
         joblib.Memory(cache_directory, verbose=0)
         if feature_extractor.cache_features
         else None
     )
-    steps = [
+    extractor_steps = [
         (name, clone(transformer))
         for name, transformer in feature_extractor.pipeline_steps()
     ]
+    if use_precomputed_features:
+        extractor_steps = [
+            (name, transformer)
+            for name, transformer in extractor_steps
+            if name != "feature_extractor"
+        ]
+        if feature_extractor.parameter_grid():
+            raise ValueError(
+                "Precomputed features cannot tune feature-extractor parameters"
+            )
+    steps = extractor_steps
     steps.append(("model", clone(model)))
     parameters = {
-        **feature_extractor.parameter_grid(),
+        **({} if use_precomputed_features else feature_extractor.parameter_grid()),
         **model.parameter_grid(),
     }
     return GridSearchCV(
@@ -144,7 +252,6 @@ def _serialisable_parameters(parameters: dict[str, Any]) -> dict[str, Any]:
 
 
 def _candidate_results(search: GridSearchCV) -> pd.DataFrame:
-    """Return the useful CV metrics for every hyperparameter candidate."""
     results = pd.DataFrame(
         {
             "candidate": np.arange(1, len(search.cv_results_["params"]) + 1),
@@ -200,6 +307,7 @@ def tune_models(
     models: list[ClassificationModel],
     train: pd.DataFrame,
     project_root: Path | str = Path("."),
+    train_features: Any | None = None,
 ) -> TuningResult:
     root = Path(project_root).resolve()
     cache_directory = (
@@ -212,12 +320,25 @@ def tune_models(
     searches: dict[str, GridSearchCV] = {}
     selected_parameters: dict[str, dict[str, Any]] = {}
     tuning_seconds: dict[str, float] = {}
+    uses_precomputed_features = train_features is not None
+    if uses_precomputed_features and len(train_features) != len(train):
+        raise ValueError("Precomputed development features are not row-aligned")
+    training_input = (
+        train_features
+        if uses_precomputed_features
+        else train[PROCESSED_TEXT_COLUMN]
+    )
 
     for model in models:
-        search = _build_search(feature_extractor, model, cache_directory)
+        search = _build_search(
+            feature_extractor,
+            model,
+            cache_directory,
+            use_precomputed_features=uses_precomputed_features,
+        )
         print(f"\nTuning {model.name} on {feature_extractor.label} features ...")
         started = time.perf_counter()
-        search.fit(train[PROCESSED_TEXT_COLUMN], train[TARGET_COLUMN])
+        search.fit(training_input, train[TARGET_COLUMN])
         tuning_seconds[model.name] = time.perf_counter() - started
         _print_and_save_candidate_results(
             search, feature_extractor, model, root
@@ -232,6 +353,7 @@ def tune_models(
         searches,
         selected_parameters,
         tuning_seconds,
+        uses_precomputed_features,
     )
 
 
@@ -239,6 +361,7 @@ def fit_final_models(
     tuning: TuningResult,
     full_train: pd.DataFrame,
     project_root: Path | str = Path("."),
+    full_train_features: Any | None = None,
 ) -> FinalTrainingResult:
     model_directory = (
         Path(project_root).resolve()
@@ -249,11 +372,21 @@ def fit_final_models(
     model_directory.mkdir(parents=True, exist_ok=True)
     pipelines: dict[str, Pipeline] = {}
     fit_seconds: dict[str, float] = {}
+    if tuning.uses_precomputed_features:
+        if full_train_features is None:
+            raise ValueError("Final fitting requires reloaded precomputed features")
+        if len(full_train_features) != len(full_train):
+            raise ValueError("Precomputed full-training features are not row-aligned")
+        training_input = full_train_features
+    else:
+        if full_train_features is not None:
+            raise ValueError("Unexpected precomputed features for a text-input pipeline")
+        training_input = full_train[PROCESSED_TEXT_COLUMN]
 
     for model_name, search in tuning.searches.items():
         pipeline = clone(search.best_estimator_)
         started = time.perf_counter()
-        pipeline.fit(full_train[PROCESSED_TEXT_COLUMN], full_train[TARGET_COLUMN])
+        pipeline.fit(training_input, full_train[TARGET_COLUMN])
         fit_seconds[model_name] = time.perf_counter() - started
         joblib.dump(
             pipeline,
@@ -261,4 +394,8 @@ def fit_final_models(
         )
         pipelines[model_name] = pipeline
 
-    return FinalTrainingResult(pipelines, fit_seconds)
+    return FinalTrainingResult(
+        pipelines,
+        fit_seconds,
+        tuning.uses_precomputed_features,
+    )

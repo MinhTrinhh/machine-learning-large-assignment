@@ -1,62 +1,74 @@
-# Machine Learning Course Assignment
+# COVID-19 Tweet Sentiment Classification
 
-**Selected topic:** Task 2, five-class sentiment classification with the Coronavirus Tweets NLP dataset using TF-IDF and pretrained GloVe embeddings.
+Machine Learning course assignment comparing TF-IDF and pretrained GloVe-Twitter features for five-class sentiment classification with Logistic Regression and linear SVM.
 
 ## Course information
 
-- Course: Machine Learning
-- Course code: CO3117
-- Semester: I - Academic Year 2026–2027
-- Instructor: Trương Vĩnh Lân
+| Item | Details |
+|---|---|
+| University | VNU-HCM University of Technology |
+| Faculty | Computer Science and Engineering |
+| Course | Machine Learning (CO3117) |
+| Semester | I — Academic Year 2026–2027 |
+| Instructor | Trương Vĩnh Lân |
+| Group | 15 |
 
-## Project structure
+## Group members
+
+| Student | Student ID |
+|---|---:|
+| Trịnh Lê Minh | 2352765 |
+| Trần Phước Sang | 2353044 |
+
+## Project links
+
+- [Open the executable notebook in Google Colab](https://colab.research.google.com/github/MinhTrinhh/machine-learning-large-assignment/blob/main/notebooks/colab_pipeline.ipynb)
+- [Read the final report](report/report.pdf)
+- [View the GitHub repository](https://github.com/MinhTrinhh/machine-learning-large-assignment)
+
+## Run the project
+
+1. Open the Google Colab link above.
+2. Select **Runtime → Run all**.
+3. Wait for every cell to complete.
+
+The notebook automatically:
+
+- clones the supporting source code;
+- installs the required Python libraries;
+- downloads and verifies the public dataset;
+- prepares the data and performs EDA;
+- extracts TF-IDF and GloVe feature representations;
+- trains and evaluates the configured models; and
+- generates metrics, figures, feature files, and fitted models.
+
+The first complete run also downloads the pretrained GloVe-Twitter-100 embeddings and may take longer than later runs. Colab storage is temporary, so download any artifacts you want to retain before closing the runtime.
+
+## Repository structure
 
 ```text
-notebooks/   Single Google Colab front end
-modules/     Reusable Python code imported by the notebook
-features/    Generated feature matrices, aligned labels, and metadata
-outputs/     Generated figures, metrics, audits, and fitted models
-reports/     Final compiled PDF report
-report/      LaTeX sources for the PDF report
-doc/         Course assignment PDF
+notebooks/
+  colab_pipeline.ipynb    Google Colab front end and complete execution workflow
+modules/
+  data_downloader.py      Public dataset download and integrity verification
+  data_preprocessor.py    Text cleaning and leakage-safe data preparation
+  text_eda.py             Exploratory data analysis
+  feature_extractor.py    TF-IDF and GloVe feature extraction
+  models.py               Logistic Regression and linear-SVM definitions
+  trainer.py              Hyperparameter tuning and final training
+  evaluator.py            Validation and test evaluation
+  plotter.py              EDA, feature-space, and result visualizations
+requirements.txt          Python dependencies installed by the notebook
+features/                 Generated feature representations and metadata
+outputs/                  Generated metrics, figures, audits, and fitted models
+report/                   LaTeX sources and compiled assignment report
 ```
 
-Downloaded datasets, serialized models, bulky feature arrays, LaTeX intermediates, and local virtual environments are intentionally excluded from Git. Compact metadata plus report tables and figures remain versionable for reproducibility. The canonical compiled report is `reports/Final_Report.pdf`; `report/report.pdf` is only a local LaTeX build artifact.
+## Generated outputs
 
-## Execution guide
+After execution, the main runtime artifacts are available under:
 
-1. Open `notebooks/task2_pipeline.ipynb` from the extracted project folder in Google Colab.
-2. Use **Runtime → Run all**. The notebook installs dependencies, downloads and verifies both CSV files, runs EDA, extracts TF-IDF and GloVe-Twitter-100 features, trains Logistic Regression and linear SVM on both representations, and exports the measured results automatically. The first run also downloads the pretrained GloVe vectors. Do not mount Google Drive or another personal cloud drive.
-3. Detailed EDA must use the official training split only. Preserve the official test split for final evaluation; fit vectorizers and tune parameters using training/validation data only.
-4. Build the LaTeX report under `report/`, then copy only the final submission PDF into `reports/`.
-5. Before submission, confirm actual contribution percentages, member emails, course code, instructor, and the Colab link.
-
-For local execution, use Python 3.10--3.13, create a virtual environment, and install `requirements.txt` (Gensim does not currently build on Python 3.14). The notebook is the canonical entry point; its EDA section replaces the former standalone EDA notebook.
-
-## Dataset and planned comparison
-
-The selected dataset contains 41,157 training tweets and 3,798 test tweets labelled as Extremely Negative, Negative, Neutral, Positive, or Extremely Positive.
-
-- Original dataset page: <https://www.kaggle.com/datasets/datatattle/covid-19-nlp-text-classification>
-- Reproducible notebook download: pinned public copies of the two original CSV files, with SHA-256 verification, are configured in `modules/data_downloader.py`.
-
-The implemented EDA audits missing values, duplicate and conflicting texts, train/test overlap, class distribution, tweet length, URLs, mentions, hashtags, and frequent unigrams/bigrams. It saves report-ready figures under `outputs/graphics/eda/` and tables under `outputs/generated/eda/`. After feature extraction, a shared stratified training sample is also projected with PCA/SVD, t-SNE, and UMAP to create six feature-space figures under `outputs/graphics/feature_space/`.
-
-The controlled experiment uses Logistic Regression and linear SVM with both representations. TF-IDF linear SVM achieved 56.69% accuracy and 0.5807 macro F1; TF-IDF Logistic Regression achieved 56.90% accuracy and 0.5728 macro F1. Mean-pooled GloVe-Twitter-100 was weaker: Logistic Regression achieved 42.36% accuracy and 0.4294 macro F1, while linear SVM achieved 41.92% accuracy and 0.4272 macro F1. All values come from the untouched official test set.
-
-## Implementation map
-
-- `modules/data_downloader.py`: pinned dataset downloads, checksum verification, and schema validation.
-- `modules/text_eda.py`: quality auditing, descriptive statistics, and EDA exports.
-- `modules/data_preprocessor.py`: shared leakage-safe splitting and text normalization.
-- `modules/feature_extractor.py`: interchangeable TF-IDF and GloVe extractors with the same `fit`/`transform` interface.
-- `modules/models.py`: interchangeable Logistic Regression and linear-SVM classes with the same `fit`/`predict` interface.
-- `modules/trainer.py`: model-agnostic hyperparameter tuning and final model fitting.
-- `modules/evaluator.py`: validation/test metrics, model selection, and evaluation-artifact export.
-- `modules/plotter.py`: every EDA, feature-space, confusion-matrix, and comparison plot.
-- `features/`: sparse TF-IDF matrices, dense GloVe arrays, aligned labels, and metadata.
-- `outputs/generated/test_metrics.csv`: the single consolidated model-results table.
-- `outputs/generated/eda/`: two compact EDA summary tables and metadata.
-- `outputs/graphics/`: report-ready EDA figures, six feature-space projections, selected confusion matrices, and the final comparison chart.
-- `outputs/models/`: serialized fitted pipelines grouped by feature extractor.
-- `reports/Final_Report.pdf`: the only versioned compiled report deliverable.
+- `features/` — extracted feature matrices and aligned labels;
+- `outputs/generated/` — metrics, cross-validation results, and audit files;
+- `outputs/graphics/` — EDA figures, feature projections, comparisons, and confusion matrices; and
+- `outputs/models/` — fitted model pipelines.

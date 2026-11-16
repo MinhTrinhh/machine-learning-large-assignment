@@ -17,6 +17,15 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,calc,positioning}
 
+% Keep source and asset paths valid whether the compiler is launched from this
+% directory or from the repository root (as many editor recipes do).
+\newcommand{\reportpath}[1]{#1}
+\newcommand{\projectpath}[1]{../#1}
+\IfFileExists{bia.tex}{}{%
+  \renewcommand{\reportpath}[1]{report/##1}%
+  \renewcommand{\projectpath}[1]{##1}%
+}
+
 \hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{5pt}
@@ -32,25 +41,25 @@
 \begin{document}
 \selectlanguage{english}
 \hypersetup{pageanchor=false}
-\input{bia}
+\input{\reportpath{bia}}
 \hypersetup{pageanchor=true}
 \pagenumbering{roman}
-\input{section/Team_work}
+\input{\reportpath{section/Team_work}}
 \clearpage
 \tableofcontents
 \listoffigures
 \listoftables
 \clearpage
 \pagenumbering{arabic}
-\input{section/Introduction}
-\input{section/Exploratory_Data_Analysis}
-\input{section/Pipeline_Design}
-\input{section/Conducted_Experiments}
-\input{section/Feature_Visualisation}
-\input{section/Result_Comparison}
-\input{section/Analysis}
-\input{section/Reproducibility}
-\input{section/Conclusion}
-\input{section/References}
-\input{section/Project_Links}
+\input{\reportpath{section/Introduction}}
+\input{\reportpath{section/Exploratory_Data_Analysis}}
+\input{\reportpath{section/Pipeline_Design}}
+\input{\reportpath{section/Conducted_Experiments}}
+\input{\reportpath{section/Feature_Visualisation}}
+\input{\reportpath{section/Result_Comparison}}
+\input{\reportpath{section/Analysis}}
+\input{\reportpath{section/Reproducibility}}
+\input{\reportpath{section/Conclusion}}
+\input{\reportpath{section/References}}
+\input{\reportpath{section/Project_Links}}
 \end{document}

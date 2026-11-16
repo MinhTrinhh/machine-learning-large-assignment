@@ -17,10 +17,12 @@ Supporting code is separated by responsibility:
   \item all visualizations: \path{modules/plotter.py}.
 \end{itemize}
 
-The fitted TF-IDF matrices are stored as compressed sparse \texttt{.npz} files. 
-Dense GloVe training and test matrices and their aligned labels are stored as \texttt{.npy} 
-files, satisfying the required embedding-file format. JSON metadata records representation 
-identity, array dimensions, row ordering, label files, and class names. Generated EDA tables 
+The fitted TF-IDF matrices are stored as compressed sparse \texttt{.npz} files. Before model
+tuning begins, dense GloVe development, validation, complete-training, and test matrices and
+their aligned labels are stored as \texttt{.npy} files. The notebook immediately reloads these
+files and supplies the reloaded matrices to cross-validation, final fitting, validation, and
+test evaluation. JSON metadata records representation identity, array dimensions, row ordering,
+file names, and class names. Generated EDA tables
 are stored under \path{outputs/generated/eda/}, consolidated test metrics 
 under \path{outputs/generated/test_metrics.csv}, and report-ready figures 
 under \path{outputs/graphics/}.

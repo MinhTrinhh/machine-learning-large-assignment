@@ -157,7 +157,13 @@ corpus.
 
 The modern representation uses the pretrained \texttt{glove-twitter-100} model distributed 
 through Gensim. Each tweet is represented by the unweighted mean of its in-vocabulary 
-100-dimensional word vectors. The resulting dense arrays have shapes $41{,}141 \times 100$ and $3{,}798 \times 100$ and are saved as 32-bit \texttt{.npy} files.
+100-dimensional word vectors. Before any classifier is trained, the development, validation,
+complete training, and test representations are saved as 32-bit \texttt{.npy} files and then
+reloaded from disk. The reloaded arrays, rather than raw text or newly recomputed embeddings,
+are the direct classifier inputs. The complete training and test arrays have shapes
+$41{,}141 \times 100$ and $3{,}798 \times 100$, respectively. Because the pretrained GloVe
+lookup is fixed and learns no corpus statistics, this serialization step introduces no
+validation- or test-set leakage.
 
 Let $K_i$ be the set of tokens in tweet $i$ that occur in the pretrained GloVe
 vocabulary, and let $\mathbf{e}(t)\in\mathbf{R}^{100}$ be the pretrained vector
@@ -192,7 +198,8 @@ $\mathbf{R}^{3{,}798\times100}$.
 
 \subsection{Modeling and Evaluation}
 
-Both representations are evaluated with Logistic Regression and a linear SVM. 
+Both representations are evaluated with Logistic Regression and a linear SVM. For GloVe,
+the classifier pipeline receives the reloaded \texttt{.npy} matrices described above.
 Before classification, each of the 100 dense GloVe dimensions is standardized
 to zero mean and unit variance:
 \[
