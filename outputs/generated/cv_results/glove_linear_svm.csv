@@ -1,0 +1,7 @@
+candidate,parameters,mean_cv_macro_f1,std_cv_macro_f1,mean_cv_accuracy,rank_cv_macro_f1,selected
+1,"{""model__C"": 0.5, ""model__class_weight"": null}",0.4335703896630847,0.004034685217605308,0.4300257126596094,1,True
+3,"{""model__C"": 1.0, ""model__class_weight"": null}",0.43354200716995245,0.004053705645537197,0.4299953295283239,2,False
+5,"{""model__C"": 2.0, ""model__class_weight"": null}",0.4335161727944781,0.00401718236286894,0.42996494362738197,3,False
+2,"{""model__C"": 0.5, ""model__class_weight"": ""balanced""}",0.3934800874991489,0.0020763132653507954,0.39906418293846757,4,False
+4,"{""model__C"": 1.0, ""model__class_weight"": ""balanced""}",0.39344409607783043,0.0021144320469478014,0.39903379980718207,5,False
+6,"{""model__C"": 2.0, ""model__class_weight"": ""balanced""}",0.3934153264653606,0.0021217059956526113,0.3990034139062401,6,False

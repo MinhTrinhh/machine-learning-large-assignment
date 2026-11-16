@@ -1,0 +1,44 @@
+{
+  "feature_method": "GloVe-Twitter-100",
+  "saved_before_model_training": true,
+  "classifier_input": "feature matrices reloaded from saved .npy files",
+  "feature_files": {
+    "development": "glove_twitter_100_development.npy",
+    "validation": "glove_twitter_100_validation.npy",
+    "train": "glove_twitter_100_train.npy",
+    "test": "glove_twitter_100_test.npy"
+  },
+  "label_files_by_split": {
+    "development": "glove_twitter_100_development_labels.npy",
+    "validation": "glove_twitter_100_validation_labels.npy",
+    "train": "train_labels.npy",
+    "test": "test_labels.npy"
+  },
+  "development_shape": [
+    32912,
+    100
+  ],
+  "validation_shape": [
+    8229,
+    100
+  ],
+  "train_shape": [
+    41141,
+    100
+  ],
+  "test_shape": [
+    3798,
+    100
+  ],
+  "train_rows": 41141,
+  "test_rows": 3798,
+  "train_order": "prepared training partition followed by validation partition",
+  "test_order": "official test-file order after preprocessing",
+  "classes": [
+    "Extremely Negative",
+    "Extremely Positive",
+    "Negative",
+    "Neutral",
+    "Positive"
+  ]
+}

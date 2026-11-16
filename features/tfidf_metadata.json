@@ -1,0 +1,27 @@
+{
+  "feature_method": "TF-IDF",
+  "validation_selected_model": "linear_svm",
+  "train_shape": [
+    41141,
+    21409
+  ],
+  "test_shape": [
+    3798,
+    21409
+  ],
+  "train_rows": 41141,
+  "test_rows": 3798,
+  "train_order": "prepared training partition followed by validation partition",
+  "test_order": "official test-file order after preprocessing",
+  "label_files": [
+    "train_labels.npy",
+    "test_labels.npy"
+  ],
+  "classes": [
+    "Extremely Negative",
+    "Extremely Positive",
+    "Negative",
+    "Neutral",
+    "Positive"
+  ]
+}

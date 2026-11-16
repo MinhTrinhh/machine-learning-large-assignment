@@ -1,0 +1,9 @@
+candidate,parameters,mean_cv_macro_f1,std_cv_macro_f1,mean_cv_accuracy,rank_cv_macro_f1,selected
+3,"{""feature_extractor__ngram_range"": [1, 1], ""model__C"": 1.0, ""model__class_weight"": null}",0.5509432831158918,0.0033632591192537162,0.5478550049395438,1,True
+4,"{""feature_extractor__ngram_range"": [1, 1], ""model__C"": 1.0, ""model__class_weight"": ""balanced""}",0.5496517823603485,0.0025774275120491828,0.5420515360500838,2,False
+8,"{""feature_extractor__ngram_range"": [1, 2], ""model__C"": 1.0, ""model__class_weight"": ""balanced""}",0.5310361211519778,0.002267347168546553,0.5228185209475072,3,False
+1,"{""feature_extractor__ngram_range"": [1, 1], ""model__C"": 0.5, ""model__class_weight"": null}",0.5288598205079568,0.006082035456469374,0.5301411824067765,4,False
+7,"{""feature_extractor__ngram_range"": [1, 2], ""model__C"": 1.0, ""model__class_weight"": null}",0.5280077262830662,0.003941960492035358,0.5252188907963512,5,False
+2,"{""feature_extractor__ngram_range"": [1, 1], ""model__C"": 0.5, ""model__class_weight"": ""balanced""}",0.5235647763580107,0.0009350114406228525,0.5178354824621061,6,False
+6,"{""feature_extractor__ngram_range"": [1, 2], ""model__C"": 0.5, ""model__class_weight"": ""balanced""}",0.5050220038428265,0.003464082672182948,0.49969630440031104,7,False
+5,"{""feature_extractor__ngram_range"": [1, 2], ""model__C"": 0.5, ""model__class_weight"": null}",0.4988065608395715,0.004194191385263195,0.5043146206757457,8,False
